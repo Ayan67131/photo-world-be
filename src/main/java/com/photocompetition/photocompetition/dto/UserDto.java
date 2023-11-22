@@ -9,4 +9,5 @@ public class UserDto {
     private long phone;
     private String email;
     private String address;
+    private String password;
 }
