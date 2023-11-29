@@ -1,5 +1,6 @@
 package com.photocompetition.photocompetition.service;
 
+import com.cloudinary.Cloudinary;
 import com.photocompetition.photocompetition.dto.PhotoDto;
 import com.photocompetition.photocompetition.entity.Contest;
 import com.photocompetition.photocompetition.entity.Photo;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +28,7 @@ public class PhotoService {
     private PhotoMapper photoMapper;
     private ContestRepository contestRepository;
     private UserRepository userRepository;
+    private Cloudinary cloudinary;
 
     public List<PhotoDto> fetchPhotosByContestId(int id){
         return photoRepository.findByContestId(id)
@@ -33,9 +36,8 @@ public class PhotoService {
     }
 
     public void uploadPhoto(MultipartFile file, int contestId, String userId) throws IOException {
-        String fileName = file.getOriginalFilename();
-        String filePath = "D://photo-competition/photo-world/src/images/contest-images/" + fileName;
-        file.transferTo(new File(filePath));
+        Map map = upload(file);
+        String filePath = String.valueOf(map.get("url"));
         User user = userRepository.findByEmail(userId).stream().findFirst().orElseThrow();
         Contest contest = contestRepository.findById(contestId).stream().findFirst().orElseThrow();
         Photo photo = new Photo();
@@ -49,5 +51,14 @@ public class PhotoService {
         return photoRepository.findAll()
                 .stream().map(photoMapper::entityToDto)
                 .collect(Collectors.toList());
+    }
+
+    public Map upload(MultipartFile file){
+        try {
+            Map data=this.cloudinary.uploader().upload(file.getBytes(),Map.of());
+            return data;
+        } catch (IOException e) {
+            throw new RuntimeException("Image upload fail !!");
+        }
     }
 }
